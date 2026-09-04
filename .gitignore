@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-ssr
+.env
+.env.local
+.netlify
+dev-dist
+.DS_Store
+*.local
