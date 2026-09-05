@@ -28,7 +28,10 @@ export function AuthProvider({ children }) {
       supabase.auth.signUp({
         email,
         password: motDePasse,
-        options: { data: { nom_complet: nomComplet } }
+        options: {
+          data: { nom_complet: nomComplet },
+          emailRedirectTo: `${window.location.origin}/connexion`
+        }
       }),
     connexion: (email, motDePasse) => supabase.auth.signInWithPassword({ email, password: motDePasse }),
     deconnexion: () => supabase.auth.signOut()
