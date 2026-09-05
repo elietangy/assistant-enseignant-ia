@@ -232,6 +232,18 @@ a {
   margin: 22px 0 18px;
 }
 
+.entete-page {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.entete-page .page-titre {
+  margin: 22px 0;
+}
+
 .message-erreur {
   background: rgba(179, 38, 30, 0.08);
   color: var(--couleur-erreur);

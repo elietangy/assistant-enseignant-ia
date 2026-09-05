@@ -19,7 +19,12 @@ export default function ExercicesDashboardPage() {
 
   return (
     <div>
-      <h1 className="page-titre">Mes exercices & devoirs</h1>
+      <div className="entete-page">
+        <h1 className="page-titre">Mes exercices & devoirs</h1>
+        <Link to="/exercices/nouveau" className="bouton">
+          + Nouveaux exercices
+        </Link>
+      </div>
 
       {erreur && <div className="message-erreur">{erreur}</div>}
 

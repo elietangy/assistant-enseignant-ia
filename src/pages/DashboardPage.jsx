@@ -54,7 +54,12 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="page-titre">Ma bibliothèque de fiches</h1>
+      <div className="entete-page">
+        <h1 className="page-titre">Ma bibliothèque de fiches</h1>
+        <Link to="/nouvelle-fiche" className="bouton">
+          + Nouvelle fiche
+        </Link>
+      </div>
 
       {horsLigne && (
         <div className="message-info">

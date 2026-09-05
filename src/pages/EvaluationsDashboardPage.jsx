@@ -19,7 +19,12 @@ export default function EvaluationsDashboardPage() {
 
   return (
     <div>
-      <h1 className="page-titre">Mes évaluations</h1>
+      <div className="entete-page">
+        <h1 className="page-titre">Mes évaluations</h1>
+        <Link to="/evaluations/nouvelle" className="bouton">
+          + Nouvelle évaluation
+        </Link>
+      </div>
 
       {erreur && <div className="message-erreur">{erreur}</div>}
 
