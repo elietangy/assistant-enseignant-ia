@@ -131,7 +131,7 @@ export default function FicheDetailPage() {
     setSuppression(true)
     try {
       await supprimerFiche(id)
-      navigate('/')
+      navigate('/fiches')
     } catch (err) {
       setErreur(err.message)
       setSuppression(false)

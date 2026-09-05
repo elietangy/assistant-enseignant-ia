@@ -4,9 +4,18 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
 import NouvelleFichePage from './pages/NouvelleFichePage'
 import FicheDetailPage from './pages/FicheDetailPage'
+import ExercicesDashboardPage from './pages/ExercicesDashboardPage'
+import NouvelExercicePage from './pages/NouvelExercicePage'
+import ExerciceDetailPage from './pages/ExerciceDetailPage'
+import EvaluationsDashboardPage from './pages/EvaluationsDashboardPage'
+import NouvelleEvaluationPage from './pages/NouvelleEvaluationPage'
+import EvaluationDetailPage from './pages/EvaluationDetailPage'
+import CahierTextePage from './pages/CahierTextePage'
+import EmploiDuTempsPage from './pages/EmploiDuTempsPage'
 import ProfilPage from './pages/ProfilPage'
 
 export default function App() {
@@ -20,6 +29,14 @@ export default function App() {
             <Route path="/inscription" element={<SignupPage />} />
             <Route
               path="/"
+              element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/fiches"
               element={
                 <ProtectedRoute>
                   <DashboardPage />
@@ -39,6 +56,70 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <FicheDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exercices"
+              element={
+                <ProtectedRoute>
+                  <ExercicesDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exercices/nouveau"
+              element={
+                <ProtectedRoute>
+                  <NouvelExercicePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exercices/:id"
+              element={
+                <ProtectedRoute>
+                  <ExerciceDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/evaluations"
+              element={
+                <ProtectedRoute>
+                  <EvaluationsDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/evaluations/nouvelle"
+              element={
+                <ProtectedRoute>
+                  <NouvelleEvaluationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/evaluations/:id"
+              element={
+                <ProtectedRoute>
+                  <EvaluationDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cahier-texte"
+              element={
+                <ProtectedRoute>
+                  <CahierTextePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/emploi-du-temps"
+              element={
+                <ProtectedRoute>
+                  <EmploiDuTempsPage />
                 </ProtectedRoute>
               }
             />

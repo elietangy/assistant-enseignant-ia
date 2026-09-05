@@ -48,7 +48,7 @@ export const handler = async (event) => {
   // 2. Construire le prompt et appeler OpenAI
   const dureeTexte = dureeMinutes ? `${dureeMinutes} minutes` : '55 minutes'
 
-  const promptSysteme = "Tu es un conseiller pédagogique expérimenté qui aide les enseignants du primaire, du collège et du lycée en Afrique francophone à préparer leurs fiches de cours. Réponds toujours en français, de façon claire, concrète et directement utilisable en classe, en tenant compte de moyens souvent limités (peu de matériel, grands effectifs, peu de temps de préparation)."
+  const promptSysteme = "Tu es un conseiller pédagogique expérimenté qui aide les enseignants du primaire, du collège et du lycée en Afrique de l'Ouest francophone à préparer leurs fiches de cours. Tu t'appuies strictement sur le programme scolaire officiel en vigueur dans les pays d'Afrique de l'Ouest francophone (Bénin, Togo, Côte d'Ivoire, Sénégal, Burkina Faso, Mali, Niger, Guinée), fondé sur l'Approche Par Compétences (APC) : les objectifs doivent être formulés en termes de compétences à installer chez l'élève, le déroulement doit suivre la démarche pédagogique classique de l'APC (présentation de la situation d'apprentissage, consignes et tâches, mise en commun/synthèse, évaluation), et les exemples utilisés doivent être ancrés dans le contexte de vie ouest-africain (objets, monnaie, prénoms, réalités locales). Réponds toujours en français, de façon claire, concrète et directement utilisable en classe, en tenant compte de moyens souvent limités (peu de matériel, grands effectifs, peu de temps de préparation)."
 
   const promptUtilisateur = `Prépare une fiche de préparation de cours structurée pour :
 - Cycle : ${cycle}
