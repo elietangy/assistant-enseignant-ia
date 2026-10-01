@@ -7,6 +7,7 @@ Application web pour aider les enseignants (primaire, collège, lycée) en Afriq
 - **Frontend** : React + Vite, CSS simple (pas de framework CSS lourd)
 - **Auth + Base de données** : Supabase (Postgres + Auth), sécurisé par Row Level Security
 - **IA** : OpenAI `gpt-4o-mini`, appelée uniquement depuis une fonction serverless Netlify (la clé API n'est jamais exposée au navigateur)
+- **Paiements** : FedaPay (abonnement mensuel 2000 FCFA primaire / 3000 FCFA secondaire), création de transaction + webhook de confirmation via fonctions serverless Netlify
 - **Hébergement** : Netlify (site statique + fonctions serverless)
 - **Hors-ligne** : cache basique (PWA) — l'application et les fiches déjà consultées restent lisibles sans connexion ; la génération IA nécessite le réseau
 
@@ -22,7 +23,13 @@ Application web pour aider les enseignants (primaire, collège, lycée) en Afriq
 
 1. Créer une clé API sur [platform.openai.com](https://platform.openai.com)
 
-### 3. Variables d'environnement locales
+### 3. FedaPay
+
+1. Créer un compte sur [fedapay.com](https://fedapay.com) et récupérer les clés API (**Développeurs → Clés API**) — commencer en mode *sandbox* pour tester.
+2. Dans **Développeurs → Webhooks**, ajouter un endpoint pointant vers `https://<ton-domaine>/.netlify/functions/fedapay-webhook`, abonné aux événements de transaction (approuvée/déclinée). Récupérer le secret de signature généré.
+3. Dans Supabase **Project Settings → API**, récupérer la clé `service_role` (secrète — utilisée uniquement par le webhook pour activer les abonnements, jamais exposée au navigateur).
+
+### 4. Variables d'environnement locales
 
 Copier `.env.example` en `.env` et renseigner les valeurs :
 
@@ -32,9 +39,14 @@ VITE_SUPABASE_ANON_KEY=...
 OPENAI_API_KEY=...
 SUPABASE_URL=...
 SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+FEDAPAY_SECRET_KEY=...
+FEDAPAY_ENV=sandbox
+FEDAPAY_WEBHOOK_SECRET=...
+SITE_URL=...
 ```
 
-### 4. Installation et développement local
+### 5. Installation et développement local
 
 ```bash
 npm install
@@ -53,12 +65,13 @@ npm install -g netlify-cli
 netlify dev
 ```
 
-### 5. Déploiement sur Netlify
+### 6. Déploiement sur Netlify
 
 1. Pousser ce projet sur GitHub (ou glisser-déposer le dossier dans Netlify)
 2. Créer un nouveau site Netlify à partir du dépôt (`netlify.toml` configure déjà la commande de build et les redirections)
-3. Dans **Site settings → Environment variables**, renseigner : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+3. Dans **Site settings → Environment variables**, renseigner : `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `FEDAPAY_SECRET_KEY`, `FEDAPAY_ENV`, `FEDAPAY_WEBHOOK_SECRET`, `SITE_URL`
 4. Déclencher un déploiement
+5. Une fois le site en ligne, mettre à jour l'URL du webhook FedaPay (étape 3 ci-dessus) avec le vrai domaine
 
 ## Structure du projet
 

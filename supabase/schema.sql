@@ -6,6 +6,7 @@ create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   nom_complet text,
   ecole text,
+  niveau_enseignement text check (niveau_enseignement in ('primaire', 'secondaire')),
   created_at timestamptz not null default now()
 );
 
@@ -16,6 +17,9 @@ create policy "Un enseignant gère son propre profil"
   for all
   using (auth.uid() = id)
   with check (auth.uid() = id);
+
+-- Si la table profiles existait déjà sans cette colonne, on l'ajoute :
+alter table profiles add column if not exists niveau_enseignement text check (niveau_enseignement in ('primaire', 'secondaire'));
 
 -- Création automatique d'une ligne de profil à l'inscription
 create or replace function public.handle_new_user()
@@ -163,3 +167,34 @@ create policy "Un enseignant gère son propre emploi du temps"
   with check (auth.uid() = user_id);
 
 create index if not exists idx_emploi_du_temps_user on emploi_du_temps(user_id, jour_semaine);
+
+-- 7. Abonnements FedaPay (historique de paiement + statut courant)
+-- Tarifs : 2000 FCFA/mois (primaire), 3000 FCFA/mois (secondaire)
+create table if not exists abonnements (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  niveau text not null check (niveau in ('primaire', 'secondaire')),
+  montant integer not null,
+  statut text not null default 'en_attente' check (statut in ('en_attente', 'actif', 'expire', 'echoue')),
+  fedapay_transaction_id text,
+  periode_debut timestamptz,
+  periode_fin timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table abonnements enable row level security;
+
+create policy "Un enseignant voit ses propres abonnements"
+  on abonnements
+  for select
+  using (auth.uid() = user_id);
+
+create policy "Un enseignant peut creer sa demande d'abonnement"
+  on abonnements
+  for insert
+  with check (auth.uid() = user_id);
+
+create index if not exists idx_abonnements_user on abonnements(user_id);
+create index if not exists idx_abonnements_statut on abonnements(user_id, statut, periode_fin desc);
+create index if not exists idx_abonnements_fedapay_tx on abonnements(fedapay_transaction_id);

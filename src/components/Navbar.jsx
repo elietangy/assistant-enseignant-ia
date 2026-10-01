@@ -8,6 +8,7 @@ const LIENS = [
   { to: '/evaluations', label: 'Évaluations' },
   { to: '/cahier-texte', label: 'Cahier de textes' },
   { to: '/emploi-du-temps', label: 'Emploi du temps' },
+  { to: '/abonnement', label: 'Mon abonnement' },
   { to: '/profil', label: 'Mon profil' }
 ]
 

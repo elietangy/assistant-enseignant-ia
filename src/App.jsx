@@ -1,9 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { AbonnementProvider } from './context/AbonnementContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Navbar from './components/Navbar'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
+import AbonnementPage from './pages/AbonnementPage'
 import HomePage from './pages/HomePage'
 import DashboardPage from './pages/DashboardPage'
 import NouvelleFichePage from './pages/NouvelleFichePage'
@@ -22,11 +24,20 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Navbar />
-        <main className="conteneur">
+        <AbonnementProvider>
+          <Navbar />
+          <main className="conteneur">
           <Routes>
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/inscription" element={<SignupPage />} />
+            <Route
+              path="/abonnement"
+              element={
+                <ProtectedRoute>
+                  <AbonnementPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/"
               element={
@@ -133,7 +144,8 @@ export default function App() {
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </main>
+          </main>
+        </AbonnementProvider>
       </BrowserRouter>
     </AuthProvider>
   )
