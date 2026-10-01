@@ -141,23 +141,42 @@ export const handler = async (event) => {
   return reponse(200, { recu: true })
 }
 
-function verifierSignature(rawBody, signatureHeader, secret) {
-  try {
-    const parties = Object.fromEntries(signatureHeader.split(',').map((partie) => partie.trim().split('=')))
-    const timestamp = parties.t
-    const signatureAttendue = parties.s
-    if (!timestamp || !signatureAttendue) return false
+// Reproduit l'algorithme du SDK officiel FedaPay (classe WebhookSignature) : l'en-tête
+// x-fedapay-signature est "t=<timestamp>,s=<hmac_hex>" (potentiellement plusieurs "s="),
+// et le HMAC porte sur "<timestamp>.<corpsBrut>", pas sur le corps seul.
+const TOLERANCE_SIGNATURE_SECONDES = 300 // 5 minutes, comme le SDK FedaPay
 
-    const signatureCalculee = crypto.createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex')
+function verifierSignature(rawBody, signatureHeader, secret, tolerance = TOLERANCE_SIGNATURE_SECONDES) {
+  if (typeof signatureHeader !== 'string' || !signatureHeader) return false
 
-    const bufA = Buffer.from(signatureCalculee)
-    const bufB = Buffer.from(signatureAttendue)
-    if (bufA.length !== bufB.length) return false
+  const details = signatureHeader.split(',').reduce(
+    (accum, item) => {
+      const [cle, valeur] = item.trim().split('=')
+      if (cle === 't') accum.timestamp = parseInt(valeur, 10)
+      if (cle === 's' && valeur) accum.signatures.push(valeur)
+      return accum
+    },
+    { timestamp: -1, signatures: [] }
+  )
 
-    return crypto.timingSafeEqual(bufA, bufB)
-  } catch {
+  if (details.timestamp === -1 || Number.isNaN(details.timestamp) || details.signatures.length === 0) {
     return false
   }
+
+  const ageSignature = Math.floor(Date.now() / 1000) - details.timestamp
+  if (ageSignature > tolerance) return false
+
+  const signatureAttendue = crypto.createHmac('sha256', secret).update(`${details.timestamp}.${rawBody}`).digest('hex')
+  const bufferAttendu = Buffer.from(signatureAttendue, 'hex')
+
+  return details.signatures.some((signatureRecue) => {
+    try {
+      const bufferRecu = Buffer.from(signatureRecue, 'hex')
+      return bufferRecu.length === bufferAttendu.length && crypto.timingSafeEqual(bufferRecu, bufferAttendu)
+    } catch {
+      return false
+    }
+  })
 }
 
 function reponse(statusCode, corps) {

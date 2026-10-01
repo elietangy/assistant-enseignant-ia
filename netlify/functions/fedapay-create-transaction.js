@@ -47,6 +47,7 @@ export const handler = async (event) => {
   const siteUrl = (SITE_URL || 'https://assistantenseignant.site').replace(/\/$/, '')
 
   let transactionId
+  let urlPaiement
   try {
     const transactionResponse = await fetch(`${fedapayBase}/transactions`, {
       method: 'POST',
@@ -72,39 +73,46 @@ export const handler = async (event) => {
     }
 
     const donnees = await transactionResponse.json()
-    transactionId = donnees['v1/transaction']?.id || donnees.id
+    const transaction = donnees['v1/transaction'] || donnees
+    transactionId = transaction.id
 
     if (!transactionId) {
       console.error('Réponse FedaPay inattendue:', JSON.stringify(donnees))
       return reponse(502, { erreur: 'Réponse de paiement invalide. Réessayez.' })
     }
+
+    // Les versions récentes de l'API FedaPay renvoient directement l'URL de paiement
+    // sur la transaction ; on ne rappelle /token que si elle est absente.
+    urlPaiement = transaction.payment_url || null
   } catch (err) {
     console.error('Erreur réseau FedaPay (création transaction):', err)
     return reponse(502, { erreur: 'Impossible de contacter le service de paiement. Réessayez.' })
   }
 
-  let urlPaiement
-  try {
-    const tokenResponse = await fetch(`${fedapayBase}/transactions/${transactionId}/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${FEDAPAY_SECRET_KEY}` }
-    })
+  if (!urlPaiement) {
+    try {
+      const tokenResponse = await fetch(`${fedapayBase}/transactions/${transactionId}/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${FEDAPAY_SECRET_KEY}` }
+      })
 
-    if (!tokenResponse.ok) {
-      const detail = await tokenResponse.text()
-      console.error('Erreur génération token FedaPay:', detail)
-      return reponse(502, { erreur: 'Impossible de générer le lien de paiement. Réessayez.' })
-    }
+      if (!tokenResponse.ok) {
+        const detail = await tokenResponse.text()
+        console.error('Erreur génération token FedaPay:', detail)
+        return reponse(502, { erreur: 'Impossible de générer le lien de paiement. Réessayez.' })
+      }
 
-    const donneesToken = await tokenResponse.json()
-    urlPaiement = donneesToken.url
-    if (!urlPaiement) {
-      console.error('Réponse token FedaPay inattendue:', JSON.stringify(donneesToken))
-      return reponse(502, { erreur: 'Lien de paiement introuvable. Réessayez.' })
+      const donneesToken = await tokenResponse.json()
+      urlPaiement = donneesToken.url || donneesToken['v1/token']?.url
+
+      if (!urlPaiement) {
+        console.error('Réponse token FedaPay inattendue:', JSON.stringify(donneesToken))
+        return reponse(502, { erreur: 'Lien de paiement introuvable. Réessayez.' })
+      }
+    } catch (err) {
+      console.error('Erreur réseau FedaPay (token):', err)
+      return reponse(502, { erreur: 'Impossible de contacter le service de paiement. Réessayez.' })
     }
-  } catch (err) {
-    console.error('Erreur réseau FedaPay (token):', err)
-    return reponse(502, { erreur: 'Impossible de contacter le service de paiement. Réessayez.' })
   }
 
   // Enregistre la demande en attente (RLS : l'utilisateur ne peut insérer que pour lui-même).
