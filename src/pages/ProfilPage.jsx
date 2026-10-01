@@ -5,10 +5,12 @@ import LoadingSpinner from '../components/LoadingSpinner'
 export default function ProfilPage() {
   const [nomComplet, setNomComplet] = useState('')
   const [ecole, setEcole] = useState('')
+  const [codeParrainage, setCodeParrainage] = useState('')
   const [chargement, setChargement] = useState(true)
   const [enregistrement, setEnregistrement] = useState(false)
   const [messageSucces, setMessageSucces] = useState('')
   const [erreur, setErreur] = useState('')
+  const [lienCopie, setLienCopie] = useState(false)
 
   useEffect(() => {
     obtenirProfil()
@@ -16,10 +18,23 @@ export default function ProfilPage() {
         if (profil) {
           setNomComplet(profil.nom_complet || '')
           setEcole(profil.ecole || '')
+          setCodeParrainage(profil.code_parrainage || '')
         }
       })
       .finally(() => setChargement(false))
   }, [])
+
+  const lienParrainage = codeParrainage ? `${window.location.origin}/inscription?ref=${codeParrainage}` : ''
+
+  const copierLien = async () => {
+    try {
+      await navigator.clipboard.writeText(lienParrainage)
+      setLienCopie(true)
+      setTimeout(() => setLienCopie(false), 2000)
+    } catch {
+      // Copie automatique indisponible : l'utilisateur peut toujours sélectionner le texte à la main.
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -66,6 +81,24 @@ export default function ProfilPage() {
           {enregistrement ? 'Enregistrement…' : 'Enregistrer'}
         </button>
       </form>
+
+      {codeParrainage && (
+        <div className="section" style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--couleur-bordure, #ddd)' }}>
+          <h2 style={{ marginTop: 0 }}>Parraine un collègue</h2>
+          <p style={{ color: 'var(--couleur-texte-discret)' }}>
+            Partage ce lien : ton collègue aura <strong>14 jours</strong> d'essai gratuit au lieu de 7, et toi tu
+            reçois <strong>30 jours gratuits</strong> dès qu'il prend son premier abonnement.
+          </p>
+          <div className="champ--ligne" style={{ alignItems: 'flex-end' }}>
+            <div className="champ" style={{ flex: 1 }}>
+              <input type="text" readOnly value={lienParrainage} onFocus={(e) => e.target.select()} />
+            </div>
+            <button type="button" className="bouton" onClick={copierLien}>
+              {lienCopie ? 'Copié !' : 'Copier le lien'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

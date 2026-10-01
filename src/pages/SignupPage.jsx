@@ -1,16 +1,23 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { appliquerParrainageEnAttente, memoriserCodeParrainageEnAttente } from '../lib/parrainageApi'
 
 export default function SignupPage() {
   const { inscription } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const codeParrainage = searchParams.get('ref')
   const [nomComplet, setNomComplet] = useState('')
   const [email, setEmail] = useState('')
   const [motDePasse, setMotDePasse] = useState('')
   const [erreur, setErreur] = useState('')
   const [messageSucces, setMessageSucces] = useState('')
   const [enCours, setEnCours] = useState(false)
+
+  useEffect(() => {
+    if (codeParrainage) memoriserCodeParrainageEnAttente(codeParrainage)
+  }, [codeParrainage])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -25,6 +32,12 @@ export default function SignupPage() {
     setEnCours(true)
     const { data, error } = await inscription(email, motDePasse, nomComplet)
     setEnCours(false)
+
+    if (!error && data?.session) {
+      // Inscription immédiatement connectée (confirmation email désactivée) :
+      // on applique le parrainage tout de suite, pas besoin d'attendre le prochain login.
+      await appliquerParrainageEnAttente()
+    }
 
     if (error) {
       setErreur(error.message)
@@ -45,6 +58,9 @@ export default function SignupPage() {
         Créer un compte
       </h1>
 
+      {codeParrainage && !messageSucces && (
+        <div className="message-info">Tu as été invité(e) par un collègue : ton essai gratuit sera de 14 jours au lieu de 7 !</div>
+      )}
       {erreur && <div className="message-erreur">{erreur}</div>}
       {messageSucces && <div className="message-info">{messageSucces}</div>}
 

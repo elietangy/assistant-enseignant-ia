@@ -64,6 +64,24 @@ export const handler = async (event) => {
   const maintenant = new Date()
   const dansUnMois = new Date(maintenant.getTime() + 30 * 24 * 60 * 60 * 1000)
 
+  // Pour la récompense de parrainage : savoir si cette transaction active vraiment un
+  // abonnement pour la première fois (et pas un simple rejeu de webhook déjà traité).
+  let etaitDejaActif = false
+  if (estApprouve) {
+    try {
+      const reponseAvant = await fetch(
+        `${SUPABASE_URL}/rest/v1/abonnements?select=statut&fedapay_transaction_id=eq.${encodeURIComponent(transactionId)}&limit=1`,
+        { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } }
+      )
+      if (reponseAvant.ok) {
+        const lignesAvant = await reponseAvant.json()
+        etaitDejaActif = lignesAvant[0]?.statut === 'actif'
+      }
+    } catch (err) {
+      console.error('Erreur lecture statut avant mise à jour (parrainage):', err)
+    }
+  }
+
   const champsMiseAJour = estApprouve
     ? {
         statut: 'actif',
@@ -133,6 +151,18 @@ export const handler = async (event) => {
         body: JSON.stringify({ niveau_enseignement: metadata.niveau })
       })
     }
+
+    // Récompense du parrain : seulement au tout premier paiement réussi du filleul,
+    // jamais sur un rejeu de webhook pour la même transaction.
+    if (estApprouve && !etaitDejaActif && metadata.user_id) {
+      await recompenserParrainSiPremierPaiement({
+        SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY,
+        userId: metadata.user_id,
+        transactionId,
+        maintenant
+      })
+    }
   } catch (err) {
     console.error('Erreur mise à jour Supabase depuis webhook FedaPay:', err)
     return reponse(500, { erreur: 'Erreur interne.' })
@@ -177,6 +207,76 @@ function verifierSignature(rawBody, signatureHeader, secret, tolerance = TOLERAN
       return false
     }
   })
+}
+
+// Accorde 30 jours gratuits au parrain quand son filleul effectue son tout premier
+// paiement réussi (jamais à l'inscription, pour éviter les faux comptes créés juste
+// pour générer des récompenses).
+async function recompenserParrainSiPremierPaiement({ SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, transactionId, maintenant }) {
+  const enTeteService = { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
+
+  try {
+    // Est-ce le premier abonnement actif de ce filleul ?
+    const reponseCompte = await fetch(
+      `${SUPABASE_URL}/rest/v1/abonnements?select=id&user_id=eq.${encodeURIComponent(userId)}&statut=eq.actif`,
+      { headers: enTeteService }
+    )
+    if (!reponseCompte.ok) return
+    const abonnementsActifs = await reponseCompte.json()
+    if (abonnementsActifs.length !== 1) return // déjà abonné avant, ou anomalie : pas de récompense
+
+    // Ce filleul a-t-il un parrain ?
+    const reponseProfil = await fetch(
+      `${SUPABASE_URL}/rest/v1/profiles?select=parraine_par&id=eq.${encodeURIComponent(userId)}&limit=1`,
+      { headers: enTeteService }
+    )
+    if (!reponseProfil.ok) return
+    const profil = (await reponseProfil.json())[0]
+    const parrainId = profil?.parraine_par
+    if (!parrainId) return
+
+    // Abonnement actif existant du parrain, s'il y en a un, pour prolonger plutôt qu'écraser.
+    const reponseAboParrain = await fetch(
+      `${SUPABASE_URL}/rest/v1/abonnements?select=id,periode_fin&user_id=eq.${encodeURIComponent(parrainId)}&statut=eq.actif&order=periode_fin.desc&limit=1`,
+      { headers: enTeteService }
+    )
+    const abosParrain = reponseAboParrain.ok ? await reponseAboParrain.json() : []
+    const existant = abosParrain[0]
+
+    const basePourExtension =
+      existant && new Date(existant.periode_fin) > maintenant ? new Date(existant.periode_fin) : maintenant
+    const nouvellePeriodeFin = new Date(basePourExtension.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+    if (existant) {
+      await fetch(`${SUPABASE_URL}/rest/v1/abonnements?id=eq.${encodeURIComponent(existant.id)}`, {
+        method: 'PATCH',
+        headers: { ...enTeteService, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ periode_fin: nouvellePeriodeFin.toISOString(), updated_at: maintenant.toISOString() })
+      })
+    } else {
+      const reponseProfilParrain = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?select=niveau_enseignement&id=eq.${encodeURIComponent(parrainId)}&limit=1`,
+        { headers: enTeteService }
+      )
+      const niveauParrain = (reponseProfilParrain.ok ? (await reponseProfilParrain.json())[0] : null)?.niveau_enseignement || 'primaire'
+
+      await fetch(`${SUPABASE_URL}/rest/v1/abonnements`, {
+        method: 'POST',
+        headers: { ...enTeteService, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          user_id: parrainId,
+          niveau: niveauParrain,
+          montant: 0,
+          statut: 'actif',
+          fedapay_transaction_id: `parrainage_${transactionId}`,
+          periode_debut: maintenant.toISOString(),
+          periode_fin: nouvellePeriodeFin.toISOString()
+        })
+      })
+    }
+  } catch (err) {
+    console.error('Erreur récompense parrainage:', err)
+  }
 }
 
 function reponse(statusCode, corps) {

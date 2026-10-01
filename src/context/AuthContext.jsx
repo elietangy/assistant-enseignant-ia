@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
+import { appliquerParrainageEnAttente } from '../lib/parrainageApi'
 
 const AuthContext = createContext(null)
 
@@ -11,10 +12,12 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setChargement(false)
+      if (data.session) appliquerParrainageEnAttente()
     })
 
-    const { data: abonnement } = supabase.auth.onAuthStateChange((_evenement, nouvelleSession) => {
+    const { data: abonnement } = supabase.auth.onAuthStateChange((evenement, nouvelleSession) => {
       setSession(nouvelleSession)
+      if (evenement === 'SIGNED_IN' && nouvelleSession) appliquerParrainageEnAttente()
     })
 
     return () => abonnement.subscription.unsubscribe()

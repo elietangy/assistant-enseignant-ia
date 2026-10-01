@@ -7,6 +7,8 @@ create table if not exists profiles (
   nom_complet text,
   ecole text,
   niveau_enseignement text check (niveau_enseignement in ('primaire', 'secondaire')),
+  code_parrainage text unique,
+  parraine_par uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -18,18 +20,24 @@ create policy "Un enseignant gère son propre profil"
   using (auth.uid() = id)
   with check (auth.uid() = id);
 
--- Si la table profiles existait déjà sans cette colonne, on l'ajoute :
+-- Si la table profiles existait déjà sans ces colonnes, on les ajoute :
 alter table profiles add column if not exists niveau_enseignement text check (niveau_enseignement in ('primaire', 'secondaire'));
+alter table profiles add column if not exists code_parrainage text unique;
+alter table profiles add column if not exists parraine_par uuid references auth.users(id) on delete set null;
+create index if not exists idx_profiles_parraine_par on profiles(parraine_par);
 
--- Création automatique d'une ligne de profil à l'inscription
+-- Si la table existait déjà, génère un code de parrainage pour les comptes qui n'en ont pas :
+update profiles set code_parrainage = upper(encode(gen_random_bytes(4), 'hex')) where code_parrainage is null;
+
+-- Création automatique d'une ligne de profil (avec code de parrainage) à l'inscription
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, nom_complet)
-  values (new.id, coalesce(new.raw_user_meta_data->>'nom_complet', ''));
+  insert into public.profiles (id, nom_complet, code_parrainage)
+  values (new.id, coalesce(new.raw_user_meta_data->>'nom_complet', ''), upper(encode(gen_random_bytes(4), 'hex')));
   return new;
 end;
 $$;

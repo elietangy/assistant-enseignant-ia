@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient'
 
 export const TARIFS = { primaire: 2000, secondaire: 3000 }
 export const JOURS_ESSAI_GRATUIT = 7
+export const JOURS_ESSAI_PARRAINE = 14
 
 export async function obtenirAbonnementActif() {
   const {
@@ -39,7 +40,10 @@ export async function obtenirStatutAcces() {
   }
 
   if (user.created_at) {
-    const finEssai = new Date(user.created_at).getTime() + JOURS_ESSAI_GRATUIT * 24 * 60 * 60 * 1000
+    const { data: profil } = await supabase.from('profiles').select('parraine_par').eq('id', user.id).maybeSingle()
+    const dureeEssaiJours = profil?.parraine_par ? JOURS_ESSAI_PARRAINE : JOURS_ESSAI_GRATUIT
+
+    const finEssai = new Date(user.created_at).getTime() + dureeEssaiJours * 24 * 60 * 60 * 1000
     const maintenant = Date.now()
     if (maintenant < finEssai) {
       const joursRestants = Math.max(1, Math.ceil((finEssai - maintenant) / (24 * 60 * 60 * 1000)))
