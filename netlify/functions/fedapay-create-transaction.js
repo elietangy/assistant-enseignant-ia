@@ -21,7 +21,7 @@ export const handler = async (event) => {
 
   const { SUPABASE_URL, SUPABASE_ANON_KEY, FEDAPAY_SECRET_KEY, FEDAPAY_ENV, SITE_URL } = process.env
 
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !FEDAPAY_SECRET_KEY) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !FEDAPAY_SECRET_KEY || !SITE_URL) {
     console.error("Variables d'environnement manquantes sur la fonction fedapay-create-transaction.")
     return reponse(500, { erreur: 'Configuration serveur incomplète. Contactez le support.' })
   }
@@ -44,7 +44,7 @@ export const handler = async (event) => {
   const [prenom, ...resteNom] = nomComplet.split(' ').filter(Boolean)
 
   const fedapayBase = FEDAPAY_ENV === 'live' ? 'https://api.fedapay.com/v1' : 'https://sandbox-api.fedapay.com/v1'
-  const siteUrl = (SITE_URL || 'https://assistantenseignant.site').replace(/\/$/, '')
+  const siteUrl = SITE_URL.replace(/\/$/, '')
 
   let transactionId
   let urlPaiement
