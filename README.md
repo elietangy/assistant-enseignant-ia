@@ -7,7 +7,7 @@ Application web pour aider les enseignants (primaire, collège, lycée) en Afriq
 - **Frontend** : React + Vite, CSS simple (pas de framework CSS lourd)
 - **Auth + Base de données** : Supabase (Postgres + Auth), sécurisé par Row Level Security
 - **IA** : OpenAI `gpt-4o-mini`, appelée uniquement depuis une fonction serverless Netlify (la clé API n'est jamais exposée au navigateur)
-- **Paiements** : FedaPay (abonnement mensuel 2000 FCFA primaire / 3000 FCFA secondaire), création de transaction + webhook de confirmation via fonctions serverless Netlify
+- **Paiements** : FedaPay (abonnement mensuel 2000 FCFA primaire / 3000 FCFA secondaire), création de transaction + webhook de confirmation via fonctions serverless Netlify. Essai gratuit de 7 jours à l'inscription (basé sur la date de création du compte), vérifié côté serveur dans chaque fonction de génération IA — pas seulement côté interface.
 - **Hébergement** : Netlify (site statique + fonctions serverless)
 - **Hors-ligne** : cache basique (PWA) — l'application et les fiches déjà consultées restent lisibles sans connexion ; la génération IA nécessite le réseau
 

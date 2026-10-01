@@ -1,5 +1,7 @@
 // Fonction serverless Netlify : génère une fiche d'évaluation (interrogation/devoir/examen) avec barème, via OpenAI.
 
+import { verifierAcces } from './_lib/verifierAcces.js'
+
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return reponse(405, { erreur: 'Méthode non autorisée.' })
@@ -25,19 +27,19 @@ export const handler = async (event) => {
     return reponse(500, { erreur: 'Configuration serveur incomplète. Contactez le support.' })
   }
 
-  let utilisateurValide
+  let acces
   try {
-    const reponseUtilisateur = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${accessToken}`, apikey: SUPABASE_ANON_KEY }
-    })
-    utilisateurValide = reponseUtilisateur.ok
+    acces = await verifierAcces({ accessToken, SUPABASE_URL, SUPABASE_ANON_KEY })
   } catch (err) {
     console.error('Erreur de vérification de session:', err)
     return reponse(502, { erreur: 'Impossible de vérifier votre session. Réessayez.' })
   }
 
-  if (!utilisateurValide) {
-    return reponse(401, { erreur: 'Session expirée, merci de vous reconnecter.' })
+  if (!acces.autorise) {
+    if (acces.motif === 'session') {
+      return reponse(401, { erreur: 'Session expirée, merci de vous reconnecter.' })
+    }
+    return reponse(403, { erreur: 'Ton essai gratuit est terminé. Abonne-toi pour continuer à générer des évaluations.' })
   }
 
   const type = typeEvaluation || 'interrogation'

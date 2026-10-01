@@ -1,6 +1,8 @@
 // Fonction serverless Netlify : génère une fiche de préparation de cours via OpenAI.
 // La clé OpenAI reste ici, côté serveur, et n'est jamais exposée au navigateur.
 
+import { verifierAcces } from './_lib/verifierAcces.js'
+
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return reponse(405, { erreur: 'Méthode non autorisée.' })
@@ -26,23 +28,20 @@ export const handler = async (event) => {
     return reponse(500, { erreur: 'Configuration serveur incomplète. Contactez le support.' })
   }
 
-  // 1. Vérifier que la requête vient bien d'un utilisateur connecté (protège le coût de l'API IA)
-  let utilisateurValide
+  // 1. Vérifier que la requête vient d'un utilisateur connecté avec accès (essai ou abonnement actif)
+  let acces
   try {
-    const reponseUtilisateur = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        apikey: SUPABASE_ANON_KEY
-      }
-    })
-    utilisateurValide = reponseUtilisateur.ok
+    acces = await verifierAcces({ accessToken, SUPABASE_URL, SUPABASE_ANON_KEY })
   } catch (err) {
     console.error('Erreur de vérification de session:', err)
     return reponse(502, { erreur: 'Impossible de vérifier votre session. Réessayez.' })
   }
 
-  if (!utilisateurValide) {
-    return reponse(401, { erreur: 'Session expirée, merci de vous reconnecter.' })
+  if (!acces.autorise) {
+    if (acces.motif === 'session') {
+      return reponse(401, { erreur: 'Session expirée, merci de vous reconnecter.' })
+    }
+    return reponse(403, { erreur: 'Ton essai gratuit est terminé. Abonne-toi pour continuer à générer des fiches.' })
   }
 
   // 2. Construire le prompt et appeler OpenAI

@@ -1,24 +1,26 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useAuth } from './AuthContext'
-import { obtenirAbonnementActif } from '../lib/abonnementApi'
+import { obtenirStatutAcces } from '../lib/abonnementApi'
 
 const AbonnementContext = createContext(null)
 
+const STATUT_INITIAL = { actif: false, source: null, abonnement: null, joursRestantsEssai: 0 }
+
 export function AbonnementProvider({ children }) {
   const { session } = useAuth()
-  const [abonnement, setAbonnement] = useState(null)
+  const [statut, setStatut] = useState(STATUT_INITIAL)
   const [chargement, setChargement] = useState(true)
 
   const rafraichir = useCallback(async () => {
     if (!session) {
-      setAbonnement(null)
+      setStatut(STATUT_INITIAL)
       setChargement(false)
       return
     }
     setChargement(true)
     try {
-      const actif = await obtenirAbonnementActif()
-      setAbonnement(actif)
+      const resultat = await obtenirStatutAcces()
+      setStatut(resultat)
     } finally {
       setChargement(false)
     }
@@ -29,8 +31,10 @@ export function AbonnementProvider({ children }) {
   }, [rafraichir])
 
   const value = {
-    abonnementActif: !!abonnement,
-    abonnement,
+    abonnementActif: statut.actif,
+    enEssaiGratuit: statut.source === 'essai',
+    joursRestantsEssai: statut.joursRestantsEssai,
+    abonnement: statut.abonnement,
     chargementAbonnement: chargement,
     rafraichirAbonnement: rafraichir
   }

@@ -5,7 +5,8 @@ import { useAbonnement } from '../context/AbonnementContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function AbonnementPage() {
-  const { abonnement, abonnementActif, chargementAbonnement, rafraichirAbonnement } = useAbonnement()
+  const { abonnement, abonnementActif, enEssaiGratuit, joursRestantsEssai, chargementAbonnement, rafraichirAbonnement } =
+    useAbonnement()
   const [searchParams] = useSearchParams()
   const [niveauEnCours, setNiveauEnCours] = useState(null)
   const [erreur, setErreur] = useState('')
@@ -41,7 +42,7 @@ export default function AbonnementPage() {
 
   if (chargementAbonnement) return <LoadingSpinner />
 
-  if (abonnementActif) {
+  if (abonnementActif && abonnement) {
     const dateFin = new Date(abonnement.periode_fin).toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'long',
@@ -66,12 +67,23 @@ export default function AbonnementPage() {
   return (
     <div className="carte">
       <h1 className="page-titre" style={{ marginTop: 0 }}>
-        Choisis ton abonnement
+        {enEssaiGratuit ? 'Ton essai gratuit' : 'Choisis ton abonnement'}
       </h1>
       <p style={{ color: 'var(--couleur-texte-discret)', marginTop: -8 }}>
         Accède à toutes les fonctionnalités de l'Assistant Enseignant IA (fiches, exercices, évaluations, cahier de
         textes, emploi du temps) avec un abonnement mensuel, sans engagement.
       </p>
+
+      {enEssaiGratuit ? (
+        <div className="message-info">
+          Il te reste <strong>{joursRestantsEssai} jour{joursRestantsEssai > 1 ? 's' : ''}</strong> d'essai gratuit.
+          Tu peux t'abonner dès maintenant pour ne pas perdre l'accès à la fin de l'essai.
+        </div>
+      ) : (
+        <div className="message-info">
+          Ton essai gratuit de 7 jours est terminé. Choisis une offre ci-dessous pour continuer.
+        </div>
+      )}
 
       {retourPaiement && (
         <div className="message-info">
