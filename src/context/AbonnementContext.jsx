@@ -10,10 +10,12 @@ export function AbonnementProvider({ children }) {
   const { session } = useAuth()
   const [statut, setStatut] = useState(STATUT_INITIAL)
   const [chargement, setChargement] = useState(true)
+  const [statutPourUtilisateur, setStatutPourUtilisateur] = useState(null)
 
   const rafraichir = useCallback(async () => {
     if (!session) {
       setStatut(STATUT_INITIAL)
+      setStatutPourUtilisateur(null)
       setChargement(false)
       return
     }
@@ -22,6 +24,7 @@ export function AbonnementProvider({ children }) {
       const resultat = await obtenirStatutAcces()
       setStatut(resultat)
     } finally {
+      setStatutPourUtilisateur(session.user?.id ?? null)
       setChargement(false)
     }
   }, [session])
@@ -34,7 +37,9 @@ export function AbonnementProvider({ children }) {
     abonnementActif: statut.actif,
     estAdmin: statut.source === 'admin',
     abonnement: statut.abonnement,
-    chargementAbonnement: chargement,
+    // Tant que le statut n'a pas été calculé pour l'utilisateur connecté, on reste en chargement
+    // (évite une redirection vers /abonnement au premier affichage d'une page).
+    chargementAbonnement: chargement || (!!session && statutPourUtilisateur !== (session.user?.id ?? null)),
     rafraichirAbonnement: rafraichir
   }
 
