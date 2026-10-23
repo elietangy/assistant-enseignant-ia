@@ -32,6 +32,7 @@ export function AbonnementProvider({ children }) {
 
   const value = {
     abonnementActif: statut.actif,
+    estAdmin: statut.source === 'admin',
     abonnement: statut.abonnement,
     chargementAbonnement: chargement,
     rafraichirAbonnement: rafraichir

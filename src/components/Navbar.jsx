@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useAbonnement } from '../context/AbonnementContext'
 
 const LIENS = [
   { to: '/fiches', label: 'Fiches de cours' },
@@ -14,6 +15,7 @@ const LIENS = [
 
 export default function Navbar() {
   const { session, deconnexion } = useAuth()
+  const { estAdmin } = useAbonnement()
   const navigate = useNavigate()
   const [menuOuvert, setMenuOuvert] = useState(false)
 
@@ -43,7 +45,7 @@ export default function Navbar() {
       </div>
       {session && (
         <nav className={`navbar__liens ${menuOuvert ? 'navbar__liens--ouvert' : ''}`}>
-          {LIENS.map((lien) => (
+          {[...LIENS, ...(estAdmin ? [{ to: '/admin', label: 'Admin' }] : [])].map((lien) => (
             <Link key={lien.to} to={lien.to} onClick={fermerMenu}>
               {lien.label}
             </Link>

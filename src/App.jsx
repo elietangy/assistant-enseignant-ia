@@ -19,6 +19,7 @@ import EvaluationDetailPage from './pages/EvaluationDetailPage'
 import CahierTextePage from './pages/CahierTextePage'
 import EmploiDuTempsPage from './pages/EmploiDuTempsPage'
 import ProfilPage from './pages/ProfilPage'
+import AdminPage from './pages/AdminPage'
 
 export default function App() {
   return (
@@ -139,6 +140,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ProfilPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
                 </ProtectedRoute>
               }
             />
