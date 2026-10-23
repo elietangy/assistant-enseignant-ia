@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { demarrerPaiementAbonnement, TARIFS } from '../lib/abonnementApi'
+import { demarrerPaiementAbonnement, TARIFS, CONTACT_TELEPHONE, CONTACT_WHATSAPP_URL } from '../lib/abonnementApi'
 import { useAbonnement } from '../context/AbonnementContext'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function AbonnementPage() {
-  const { abonnement, abonnementActif, enEssaiGratuit, joursRestantsEssai, chargementAbonnement, rafraichirAbonnement } =
-    useAbonnement()
+  const { abonnement, abonnementActif, chargementAbonnement, rafraichirAbonnement } = useAbonnement()
   const [searchParams] = useSearchParams()
   const [niveauEnCours, setNiveauEnCours] = useState(null)
   const [erreur, setErreur] = useState('')
@@ -67,23 +66,12 @@ export default function AbonnementPage() {
   return (
     <div className="carte">
       <h1 className="page-titre" style={{ marginTop: 0 }}>
-        {enEssaiGratuit ? 'Ton essai gratuit' : 'Choisis ton abonnement'}
+        Choisis ton abonnement
       </h1>
       <p style={{ color: 'var(--couleur-texte-discret)', marginTop: -8 }}>
         Accède à toutes les fonctionnalités de l'Assistant Enseignant IA (fiches, exercices, évaluations, cahier de
         textes, emploi du temps) avec un abonnement mensuel, sans engagement.
       </p>
-
-      {enEssaiGratuit ? (
-        <div className="message-info">
-          Il te reste <strong>{joursRestantsEssai} jour{joursRestantsEssai > 1 ? 's' : ''}</strong> d'essai gratuit.
-          Tu peux t'abonner dès maintenant pour ne pas perdre l'accès à la fin de l'essai.
-        </div>
-      ) : (
-        <div className="message-info">
-          Ton essai gratuit de 7 jours est terminé. Choisis une offre ci-dessous pour continuer.
-        </div>
-      )}
 
       {retourPaiement && (
         <div className="message-info">
@@ -117,6 +105,14 @@ export default function AbonnementPage() {
           onChoisir={() => handleAbonnement('secondaire')}
         />
       </div>
+
+      <p style={{ textAlign: 'center', marginTop: 24, color: 'var(--couleur-texte-discret)' }}>
+        Une question ? Contacte-nous au <a href={`tel:${CONTACT_TELEPHONE}`}>{CONTACT_TELEPHONE}</a> ou sur{' '}
+        <a href={CONTACT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+          WhatsApp
+        </a>
+        .
+      </p>
     </div>
   )
 }

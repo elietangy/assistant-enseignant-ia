@@ -59,7 +59,7 @@ export default function SignupPage() {
       </h1>
 
       {codeParrainage && !messageSucces && (
-        <div className="message-info">Tu as été invité(e) par un collègue : ton essai gratuit sera de 14 jours au lieu de 7 !</div>
+        <div className="message-info">Tu as été invité(e) par un collègue.</div>
       )}
       {erreur && <div className="message-erreur">{erreur}</div>}
       {messageSucces && <div className="message-info">{messageSucces}</div>}

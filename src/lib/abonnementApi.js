@@ -1,8 +1,8 @@
 import { supabase } from '../supabaseClient'
 
 export const TARIFS = { primaire: 2000, secondaire: 3000 }
-export const JOURS_ESSAI_GRATUIT = 7
-export const JOURS_ESSAI_PARRAINE = 14
+export const CONTACT_TELEPHONE = '+2290196486626'
+export const CONTACT_WHATSAPP_URL = 'https://wa.me/2290196486626'
 
 export async function obtenirAbonnementActif() {
   const {
@@ -25,33 +25,20 @@ export async function obtenirAbonnementActif() {
   return data
 }
 
-// Statut d'accès global : abonnement payant actif, ou essai gratuit des 7 premiers
-// jours suivant l'inscription (basé sur la date de création du compte Supabase).
+// Statut d'accès global : abonnement payant actif, ou compte administrateur.
 export async function obtenirStatutAcces() {
+  // Les administrateurs (table public.admins) ont toujours accès, sans abonnement.
   const {
     data: { user }
   } = await supabase.auth.getUser()
-
-  if (!user) return { actif: false, source: null, abonnement: null, joursRestantsEssai: 0 }
+  if (user) {
+    const { data: admin } = await supabase.from('admins').select('user_id').eq('user_id', user.id).maybeSingle()
+    if (admin) return { actif: true, source: 'admin', abonnement: null }
+  }
 
   const abonnement = await obtenirAbonnementActif()
-  if (abonnement) {
-    return { actif: true, source: 'abonnement', abonnement, joursRestantsEssai: 0 }
-  }
-
-  if (user.created_at) {
-    const { data: profil } = await supabase.from('profiles').select('parraine_par').eq('id', user.id).maybeSingle()
-    const dureeEssaiJours = profil?.parraine_par ? JOURS_ESSAI_PARRAINE : JOURS_ESSAI_GRATUIT
-
-    const finEssai = new Date(user.created_at).getTime() + dureeEssaiJours * 24 * 60 * 60 * 1000
-    const maintenant = Date.now()
-    if (maintenant < finEssai) {
-      const joursRestants = Math.max(1, Math.ceil((finEssai - maintenant) / (24 * 60 * 60 * 1000)))
-      return { actif: true, source: 'essai', abonnement: null, joursRestantsEssai: joursRestants }
-    }
-  }
-
-  return { actif: false, source: null, abonnement: null, joursRestantsEssai: 0 }
+  if (abonnement) return { actif: true, source: 'abonnement', abonnement }
+  return { actif: false, source: null, abonnement: null }
 }
 
 export async function demarrerPaiementAbonnement(niveau) {

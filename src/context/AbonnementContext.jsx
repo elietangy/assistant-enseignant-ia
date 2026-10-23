@@ -4,7 +4,7 @@ import { obtenirStatutAcces } from '../lib/abonnementApi'
 
 const AbonnementContext = createContext(null)
 
-const STATUT_INITIAL = { actif: false, source: null, abonnement: null, joursRestantsEssai: 0 }
+const STATUT_INITIAL = { actif: false, source: null, abonnement: null }
 
 export function AbonnementProvider({ children }) {
   const { session } = useAuth()
@@ -32,8 +32,6 @@ export function AbonnementProvider({ children }) {
 
   const value = {
     abonnementActif: statut.actif,
-    enEssaiGratuit: statut.source === 'essai',
-    joursRestantsEssai: statut.joursRestantsEssai,
     abonnement: statut.abonnement,
     chargementAbonnement: chargement,
     rafraichirAbonnement: rafraichir

@@ -1,10 +1,7 @@
 // Vérifie qu'une requête vient d'un utilisateur connecté ET qui a accès à l'appli
-// (abonnement actif OU dans les jours suivant son inscription, essai gratuit).
+// (abonnement actif).
 // Utilisé par toutes les fonctions de génération IA pour éviter qu'un appel direct
 // à l'API (en dehors du site) ne permette de générer du contenu gratuitement.
-
-export const JOURS_ESSAI_GRATUIT = 7
-export const JOURS_ESSAI_PARRAINE = 14
 
 export async function verifierAcces({ accessToken, SUPABASE_URL, SUPABASE_ANON_KEY }) {
   const reponseUtilisateur = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
@@ -17,25 +14,15 @@ export async function verifierAcces({ accessToken, SUPABASE_URL, SUPABASE_ANON_K
 
   const utilisateur = await reponseUtilisateur.json()
 
-  // Essai gratuit : plus long si l'enseignant a été parrainé.
-  if (utilisateur.created_at) {
-    let dureeEssaiJours = JOURS_ESSAI_GRATUIT
-    try {
-      const reponseProfil = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?select=parraine_par&id=eq.${encodeURIComponent(utilisateur.id)}&limit=1`,
-        { headers: { Authorization: `Bearer ${accessToken}`, apikey: SUPABASE_ANON_KEY } }
-      )
-      if (reponseProfil.ok) {
-        const profils = await reponseProfil.json()
-        if (profils[0]?.parraine_par) dureeEssaiJours = JOURS_ESSAI_PARRAINE
-      }
-    } catch {
-      // En cas d'échec de cette vérification secondaire, on reste sur la durée par défaut.
-    }
-
-    const finEssai = new Date(utilisateur.created_at).getTime() + dureeEssaiJours * 24 * 60 * 60 * 1000
-    if (Date.now() < finEssai) {
-      return { autorise: true, motif: 'essai', utilisateur }
+  // Les administrateurs (table public.admins) ont toujours accès.
+  const reponseAdmin = await fetch(
+    `${SUPABASE_URL}/rest/v1/admins?select=user_id&user_id=eq.${encodeURIComponent(utilisateur.id)}&limit=1`,
+    { headers: { Authorization: `Bearer ${accessToken}`, apikey: SUPABASE_ANON_KEY } }
+  )
+  if (reponseAdmin.ok) {
+    const admins = await reponseAdmin.json()
+    if (Array.isArray(admins) && admins.length > 0) {
+      return { autorise: true, motif: 'admin', utilisateur }
     }
   }
 

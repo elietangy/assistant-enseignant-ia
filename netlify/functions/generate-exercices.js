@@ -39,7 +39,7 @@ export const handler = async (event) => {
     if (acces.motif === 'session') {
       return reponse(401, { erreur: 'Session expirée, merci de vous reconnecter.' })
     }
-    return reponse(403, { erreur: 'Ton essai gratuit est terminé. Abonne-toi pour continuer à générer des exercices.' })
+    return reponse(403, { erreur: 'Abonne-toi pour continuer à générer des exercices.' })
   }
 
   const nombre = Number(nombreExercices) > 0 ? Number(nombreExercices) : 5

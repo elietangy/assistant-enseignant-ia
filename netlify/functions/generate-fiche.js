@@ -28,7 +28,7 @@ export const handler = async (event) => {
     return reponse(500, { erreur: 'Configuration serveur incomplète. Contactez le support.' })
   }
 
-  // 1. Vérifier que la requête vient d'un utilisateur connecté avec accès (essai ou abonnement actif)
+  // 1. Vérifier que la requête vient d'un utilisateur connecté avec accès (abonnement actif)
   let acces
   try {
     acces = await verifierAcces({ accessToken, SUPABASE_URL, SUPABASE_ANON_KEY })
@@ -41,7 +41,7 @@ export const handler = async (event) => {
     if (acces.motif === 'session') {
       return reponse(401, { erreur: 'Session expirée, merci de vous reconnecter.' })
     }
-    return reponse(403, { erreur: 'Ton essai gratuit est terminé. Abonne-toi pour continuer à générer des fiches.' })
+    return reponse(403, { erreur: 'Abonne-toi pour continuer à générer des fiches.' })
   }
 
   // 2. Construire le prompt et appeler OpenAI
